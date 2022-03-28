@@ -324,6 +324,7 @@ if __name__ == '__main__':
         l8.set_facecolor('r')
         
         plt.show()
+        plt.savefig('fig1.png')
         plt.close('all')
         plt.ylim(0, 10)
         plt.xlabel("execution time")
@@ -340,7 +341,9 @@ if __name__ == '__main__':
         c6.set_facecolor('b')
         c8.set_facecolor('b')
         plt.xticks(rotation=45)
+        plt.savefig('fig2.png')
         plt.show()        
+        
         
         
     else:
