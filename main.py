@@ -18,288 +18,298 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.utils import np_utils as npu
 
+
+class TrojanDetector():
+
+    def __init__(self):
+        self.train_x, self.test_x, self.train_y, self.test_y = prepare_data()
     
-def create_model(train_x, test_y):
-    num_classes = test_y.shape[1]
+    def create_model(self):
+        num_classes = self.test_y.shape[1]
 
-    model = Sequential()
+        model = Sequential()
 
-    model.add(Dense(15, input_dim=train_x.shape[1], activation='relu'))
+        model.add(Dense(15, input_dim=self.train_x.shape[1], activation='relu'))
 
-    model.add(Dense(75, activation='relu'))
+        model.add(Dense(75, activation='relu'))
 
-    model.add(Dense(num_classes, activation='softmax'))
+        model.add(Dense(num_classes, activation='softmax'))
 
-    model.compile(optimizer='adam', loss='categorical_crossentropy',
-                  metrics=['mse', 'accuracy'])
-    return model
-
-
-def multilayer_perceptron():
-    """
-    This function performs multiclass classification with multilayer_perceptron
-    """
-    train_x, test_x, train_y, test_y = prepare_data()
-
-    labels = test_y
-
-    train_y = npu.to_categorical(train_y)
-    test_y = npu.to_categorical(test_y)
-    
-    model = create_model(train_x, test_y)
-    
-    start = time.time()
-    model.fit(train_x, train_y, epochs=50, batch_size=10, shuffle=False)
-    end = time.time()
-    
-    y_pred = model.predict(test_x)
-    predictions = np.argmax(y_pred, axis=1)
-
-    correct_class = 0
-    for i in range(len(labels)):
-        if labels[i] == predictions[i]:
-            correct_class += 1
-
-    time_ = end - start
-    accuracy = (correct_class / len(labels)) * 100
-
-    print("### MLP ###\n")
-    print("Training lasted %.2f seconds" % time_)
-    print("Accuracy = %.2f" % (accuracy))
-
-    return(time_, accuracy)
+        model.compile(optimizer='adam', loss='categorical_crossentropy',
+                      metrics=['mse', 'accuracy'])
+        return model
 
 
-def xgboost():
-    """
-    This function performs classification with XGBoost
-    """
-    train_x, test_x, train_y, test_y = prepare_data()
-    train_y = train_y.reshape((train_y.shape[0], ))
-    
-   
-    clf = XGBClassifier(n_estimators=20)
-    
-    start = time.time()
-    clf.fit(train_x, train_y)
-    end = time.time()
-    
-    y_pred = clf.predict(test_x)
+    def multilayer_perceptron(self):
+        """
+        This function performs multiclass classification with multilayer_perceptron
+        """
+        # train_x, test_x, train_y, test_y = prepare_data()
 
-    time_ = end - start
-    accuracy = 100 * accuracy_score(test_y, y_pred)
+        labels = self.test_y
 
-    print("### XGB ###\n")
-    print("Training lasted %.2f seconds" % time_)
-    print("Accuracy = %.2f" % (accuracy))
-
-    return(time_, accuracy)
-
-
-def logistic_regression():
-    """
-    This function performs classification with logistic regression.
-    """
-    train_x, test_x, train_y, test_y = prepare_data()
-    train_y = train_y.reshape((train_y.shape[0], ))
-
-    clf = LogisticRegression(random_state=0, solver='liblinear', max_iter=300,
-                             multi_class='ovr')
-    start = time.time()
-    clf.fit(train_x, train_y)
-    end = time.time()
-    
-    y_pred = clf.predict(test_x)
-
-    time_ = end - start
-    accuracy = 100 * accuracy_score(test_y, y_pred)
-
-    print("### LR ###\n")
-    print("Training lasted %.2f seconds" % time_)
-    print("Accuracy = %.2f" % (accuracy))
-
-    return(time_, accuracy)
-
-
-def random_forest():
-    """
-    This function performs classification with random forest.
-    """
-    train_x, test_x, train_y, test_y = prepare_data()
-    train_y = train_y.reshape((train_y.shape[0], ))
+        train_y = npu.to_categorical(self.train_y)
+        test_y = npu.to_categorical(self.test_y)
         
-    clf = RandomForestClassifier(n_estimators=5, max_depth=5, random_state=1)
-    
-    start = time.time()
-    clf.fit(train_x, train_y)    
-    end = time.time()
-
-    y_pred = clf.predict(test_x)
-
-    time_ = end - start
-    accuracy = 100 * accuracy_score(test_y, y_pred)
-
-    print("### RF ###\n")
-    print("Training lasted %.2f seconds" % time_)
-    print("Accuracy = %.2f" % (accuracy))
-    print("F1-score = ",f1_score(test_y, y_pred, average='macro')*100)
+        model = self.create_model(self.train_x, test_y)
         
-    """
-    importance = clf.feature_importances_
-    
-    # summarize feature importance
-    for i,v in enumerate(importance):
-    	print('Feature: %0d, Score: %.5f' % (i,v))
-    # plot feature importance
-    plt.bar([x for x in range(len(importance))], importance)
-    plt.xlabel('Features')
-    plt.ylabel('Feature importance factor')
-    plt.title('Features importance')
-    plt.show()
-    """
-    return(time_, accuracy)
+        start = time.time()
+        model.fit(self.train_x, train_y, epochs=100, batch_size=10, shuffle=False)
+        end = time.time()
+        
+        y_pred = model.predict(self.test_x)
+        predictions = np.argmax(y_pred, axis=1)
+
+        correct_class = 0
+        for i in range(len(labels)):
+            if labels[i] == predictions[i]:
+                correct_class += 1
+
+        time_ = end - start
+        accuracy = (correct_class / len(labels)) * 100
+
+        print("### MLP ###\n")
+        print("Training lasted %.2f seconds" % time_)
+        print("Accuracy = %.2f" % (accuracy))
+
+        return(time_, accuracy)
 
 
-def k_neighbors():
-    """
-    This function performs classification with k neighbors algorithm.
-    """
-    train_x, test_x, train_y, test_y = prepare_data()
-    train_y = train_y.reshape((train_y.shape[0], ))
-          
-    clf = KNeighborsClassifier(n_neighbors=3)
-    
-    start = time.time()
-    clf.fit(train_x, train_y)
-    end = time.time()
+    def xgboost(self):
+        """
+        This function performs classification with XGBoost
+        """
+        # train_x, test_x, train_y, test_y = prepare_data()
+        train_y = self.train_y.reshape((self.train_y.shape[0], ))
+        
+       
+        clf = XGBClassifier(n_estimators=20)
+        
+        start = time.time()
+        clf.fit(self.train_x, train_y)
+        end = time.time()
+        
+        y_pred = clf.predict(self.test_x)
 
-    y_pred = clf.predict(test_x)
+        time_ = end - start
+        accuracy = 100 * accuracy_score(self.test_y, y_pred)
 
-    time_ = end - start
-    accuracy = 100 * accuracy_score(test_y, y_pred)
+        print("### XGB ###\n")
+        print("Training lasted %.2f seconds" % time_)
+        print("Accuracy = %.2f" % (accuracy))
 
-    print("### KNN ###\n")
-    print("Training lasted %.2f seconds" % time_)
-    print("Accuracy = %.2f" % (accuracy))
-
-    return(time_, accuracy)
+        return(time_, accuracy)
 
 
-def plot_confusion_matrix(cm, target_names, title, cmap=None, normalize=False):
-    if cmap is None:
-        cmap = plt.get_cmap('Blues')
+    def logistic_regression(self):
+        """
+        This function performs classification with logistic regression.
+        """
+        # train_x, test_x, train_y, test_y = prepare_data()
+        train_y = self.train_y.reshape((self.train_y.shape[0], ))
 
-    plt.figure(figsize=(8, 6))
-    plt.imshow(cm, interpolation='nearest', cmap=cmap)
-    plt.title(title)
-    plt.colorbar()
+        clf = LogisticRegression(random_state=0, solver='liblinear', max_iter=300,
+                                 multi_class='ovr')
+        start = time.time()
+        clf.fit(self.train_x, train_y)
+        end = time.time()
+        
+        y_pred = clf.predict(self.test_x)
 
-    if target_names is not None:
-        tick_marks = np.arange(len(target_names))
-        plt.xticks(tick_marks, target_names, rotation=90)
-        plt.yticks(tick_marks, target_names)
+        time_ = end - start
+        accuracy = 100 * accuracy_score(self.test_y, y_pred)
 
-    if normalize:
-        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        print("### LR ###\n")
+        print("Training lasted %.2f seconds" % time_)
+        print("Accuracy = %.2f" % (accuracy))
 
-    thresh = cm.max() / 1.5 if normalize else cm.max() / 2
-    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+        return(time_, accuracy)
+
+
+    def random_forest(self):
+        """
+        This function performs classification with random forest.
+        """
+        # train_x, test_x, train_y, test_y = prepare_data()
+        train_y = self.train_y.reshape((self.train_y.shape[0], ))
+            
+        clf = RandomForestClassifier(n_estimators=5, max_depth=5, random_state=1)
+        
+        start = time.time()
+        clf.fit(self.train_x, train_y)    
+        end = time.time()
+
+        y_pred = clf.predict(self.test_x)
+
+        time_ = end - start
+        accuracy = 100 * accuracy_score(self.test_y, y_pred)
+
+        print("### RF ###\n")
+        print("Training lasted %.2f seconds" % time_)
+        print("Accuracy = %.2f" % (accuracy))
+        print("F1-score = ",f1_score(self.test_y, y_pred, average='macro')*100)
+            
+        """
+        importance = clf.feature_importances_
+        
+        # summarize feature importance
+        for i,v in enumerate(importance):
+        	print('Feature: %0d, Score: %.5f' % (i,v))
+        # plot feature importance
+        plt.bar([x for x in range(len(importance))], importance)
+        plt.xlabel('Features')
+        plt.ylabel('Feature importance factor')
+        plt.title('Features importance')
+        plt.show()
+        """
+        return(time_, accuracy)
+
+
+    def k_neighbors(self):
+        """
+        This function performs classification with k neighbors algorithm.
+        """
+        # train_x, test_x, train_y, test_y = prepare_data()
+        train_y = self.train_y.reshape((self.train_y.shape[0], ))
+        print('test_x: ', self.test_x)
+        clf = KNeighborsClassifier(n_neighbors=3)
+        
+        start = time.time()
+        clf.fit(self.train_x, train_y)
+        end = time.time()
+
+        y_pred = clf.predict(self.test_x)
+
+        time_ = end - start
+        accuracy = 100 * accuracy_score(self.test_y, y_pred)
+
+        print("### KNN ###\n")
+        print("Training lasted %.2f seconds" % time_)
+        print("Accuracy = %.2f" % (accuracy))
+
+        return(time_, accuracy)
+
+
+    def plot_confusion_matrix(self, cm, target_names, title, cmap=None, normalize=False):
+        if cmap is None:
+            cmap = plt.get_cmap('Blues')
+
+        plt.figure(figsize=(8, 6))
+        plt.imshow(cm, interpolation='nearest', cmap=cmap)
+        plt.title(title)
+        plt.colorbar()
+
+        if target_names is not None:
+            tick_marks = np.arange(len(target_names))
+            plt.xticks(tick_marks, target_names, rotation=90)
+            plt.yticks(tick_marks, target_names)
+
         if normalize:
-            plt.text(j, i, "{:0.1f}".format(cm[i, j]),
-                     horizontalalignment="center",
-                     color="white" if cm[i, j] > thresh else "black")
-        else:
-            plt.text(j, i, "{:,}".format(cm[i, j]),
-                     horizontalalignment="center",
-                     color="white" if cm[i, j] > thresh else "black")
+            cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
-    plt.tight_layout()
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
-    plt.show()
+        thresh = cm.max() / 1.5 if normalize else cm.max() / 2
+        for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+            if normalize:
+                plt.text(j, i, "{:0.1f}".format(cm[i, j]),
+                         horizontalalignment="center",
+                         color="white" if cm[i, j] > thresh else "black")
+            else:
+                plt.text(j, i, "{:,}".format(cm[i, j]),
+                         horizontalalignment="center",
+                         color="white" if cm[i, j] > thresh else "black")
+
+        plt.tight_layout()
+        plt.ylabel('True label')
+        plt.xlabel('Predicted label')
+        plt.show()
 
 
-def gradient_boosting():
-    """
-    This function performs classification with Gradient Boosting.
-    """
-    train_x, test_x, train_y, test_y = prepare_data()
-    train_y = train_y.reshape((train_y.shape[0], ))
+    def gradient_boosting(self):
+        """
+        This function performs classification with Gradient Boosting.
+        """
+        # train_x, self.test_x, train_y, test_y = prepare_data()
+        train_y = self.train_y.reshape((self.train_y.shape[0], ))
+            
+        clf = GradientBoostingClassifier(learning_rate=0.1, n_estimators=75)
+
+        start = time.time()
+        clf.fit(self.train_x, train_y)    
+        end = time.time()
+
+        y_pred = clf.predict(self.test_x)
+
+        time_ = end - start
+        accuracy = 100 * accuracy_score(self.test_y, y_pred)
+
+        print("### GB ###\n")
+        print("Training lasted %.2f seconds" % time_)
+        print("Accuracy = %.2f" % (accuracy))
+
+        """
+        conf_matrix = confusion_matrix(test_y, y_pred)
+        plot_confusion_matrix(cm=conf_matrix, target_names=['Trojan Free','Trojan Infected'], title='Confusion matrix')
+        """ 
+        return(time_, accuracy)
+
+
+    def support_vector_machine(self):
+        """
+        This function performs classification with support vector machine
+        """
+        # train_x, self.test_x, train_y, test_y = prepare_data()
+        train_y = self.train_y.reshape((self.train_y.shape[0], ))
+      
+        classifier = SVC(kernel="rbf", C=10, gamma=1)
+
+        start = time.time()
+        classifier.fit(self.train_x, train_y)
+        end = time.time()
+
+        y_pred = classifier.predict(self.test_x)
+
+        time_ = end - start
+        accuracy = 100 * accuracy_score(self.test_y, y_pred)
         
-    clf = GradientBoostingClassifier(learning_rate=0.1, n_estimators=75)
+        print("### SVM ###\n")
+        print("Training lasted %.2f seconds" % time_)
+        print("For C : ", 10, ", Gamma: ", 1, ", kernel = rbf",
+              " => Accuracy = %.2f" % (accuracy))
 
-    start = time.time()
-    clf.fit(train_x, train_y)    
-    end = time.time()
+        plt.scatter(y_pred, self.test_y)
+        plt.savefig('svm_output.png')
+            
 
-    y_pred = clf.predict(test_x)
-
-    time_ = end - start
-    accuracy = 100 * accuracy_score(test_y, y_pred)
-
-    print("### GB ###\n")
-    print("Training lasted %.2f seconds" % time_)
-    print("Accuracy = %.2f" % (accuracy))
-
-    """
-    conf_matrix = confusion_matrix(test_y, y_pred)
-    plot_confusion_matrix(cm=conf_matrix, target_names=['Trojan Free','Trojan Infected'], title='Confusion matrix')
-    """ 
-    return(time_, accuracy)
-
-
-def support_vector_machine():
-    """
-    This function performs classification with support vector machine
-    """
-    train_x, test_x, train_y, test_y = prepare_data()
-    train_y = train_y.reshape((train_y.shape[0], ))
-  
-    classifier = SVC(kernel="rbf", C=10, gamma=1)
-
-    start = time.time()
-    classifier.fit(train_x, train_y)
-    end = time.time()
-
-    y_pred = classifier.predict(test_x)
-
-    time_ = end - start
-    accuracy = 100 * accuracy_score(test_y, y_pred)
-    
-    print("### SVM ###\n")
-    print("Training lasted %.2f seconds" % time_)
-    print("For C : ", 10, ", Gamma: ", 1, ", kernel = rbf",
-          " => Accuracy = %.2f" % (accuracy))
-        
-
-    return(time_, accuracy)
+        return(time_, accuracy)
 
 
 # main
 if __name__ == '__main__':
     # Define the user's preferred method
+    TD = TrojanDetector()
     if sys.argv[1] == 'svm':
-        svm_time, svm_accuracy = support_vector_machine()
+        svm_time, svm_accuracy = TD.support_vector_machine()
     elif sys.argv[1] == 'random_forest':
-        rf_time, rf_accuracy = random_forest()
+        rf_time, rf_accuracy = TD.random_forest()
     elif sys.argv[1] == 'mlp':
-        mlp_time, mlp_accuracy = multilayer_perceptron()
+        mlp_time, mlp_accuracy = TD.multilayer_perceptron()
     elif sys.argv[1] == 'gradient_boosting':
-        grad_time, grad_accuracy = gradient_boosting()
+        grad_time, grad_accuracy = TD.gradient_boosting()
     elif sys.argv[1] == 'k_neighbors':
-        k_time, k_accuracy = k_neighbors()
+        k_time, k_accuracy = TD.k_neighbors()
     elif sys.argv[1] == 'logistic_regression':
-        log_time, log_accuracy = logistic_regression()
+        log_time, log_accuracy = TD.logistic_regression()
     elif sys.argv[1] == 'xgboost':
-        xg_time, xg_accuracy = xgboost()
+        xg_time, xg_accuracy = TD.xgboost()
     elif sys.argv[1] == 'comparative':
-        svm_time, svm_accuracy = support_vector_machine()
-        rf_time, rf_accuracy = random_forest()
-        mlp_time, mlp_accuracy = multilayer_perceptron()
-        grad_time, grad_accuracy = gradient_boosting()
-        k_time, k_accuracy = k_neighbors()
-        log_time, log_accuracy = logistic_regression()
-        xg_time, xg_accuracy = xgboost()
+        
+        svm_time, svm_accuracy = TD.support_vector_machine()
+        rf_time, rf_accuracy = TD.random_forest()
+        mlp_time, mlp_accuracy = TD.multilayer_perceptron()
+        grad_time, grad_accuracy = TD.gradient_boosting()
+        k_time, k_accuracy = TD.k_neighbors()
+        log_time, log_accuracy = TD.logistic_regression()
+        xg_time, xg_accuracy = TD.xgboost()
 
         accuracy = [svm_accuracy, rf_accuracy, mlp_accuracy, grad_accuracy,
                     k_accuracy, log_accuracy, xg_accuracy]
@@ -308,9 +318,9 @@ if __name__ == '__main__':
         plt.ylim(0, 100)
         plt.xlabel("accuracy ")
         plt.title("Comparison of permormance")
-        l1, l2, l3, l4, l5, l6, l8 = plt.bar(["SVM-acc", "RF-acc", "MLP-acc",
-                                                  "GB-acc", "K-acc", "log-acc",
-                                                  "xg-acc"],
+        l1, l2, l3, l4, l5, l6, l8 = plt.bar(["SVM", "RF", "MLP",
+                                                  "GB", "KNN", "LR",
+                                                  "XGB"],
                                                  accuracy)
         
         plt.xticks(rotation=45)
@@ -322,9 +332,8 @@ if __name__ == '__main__':
         l5.set_facecolor('r')
         l6.set_facecolor('r')
         l8.set_facecolor('r')
-        
+        plt.savefig('accuracy.png',bbox_inches='tight')
         plt.show()
-        plt.savefig('fig1.png')
         plt.close('all')
         plt.ylim(0, 10)
         plt.xlabel("execution time")
@@ -341,10 +350,10 @@ if __name__ == '__main__':
         c6.set_facecolor('b')
         c8.set_facecolor('b')
         plt.xticks(rotation=45)
-        plt.savefig('fig2.png')
+        plt.savefig('time.png',bbox_inches='tight')
         plt.show()        
         
-        
+
         
     else:
         print("None algorithm was given from input")
